@@ -40,24 +40,17 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public void createTask(String name, String details, Status status, Integer id) {
-        Task task = new Task();
-        task.name = name;
-        task.details = details;
-        task.status = status;
-        task.id = id;
+        Task task = new Task(name, details, status, id);
+
         storage.allTasks.put(id, task);
     }
 
     @Override
     public void createSubTask(String name, String details, Status status, Integer id, Integer idEpic) {
-        SubTask subTask = new SubTask();
-        subTask.name = name;
-        subTask.details = details;
-        subTask.status = status;
-        subTask.id = id;
-        subTask.idEpic = idEpic;
+        SubTask subTask = new SubTask(name, details, status, id, idEpic);
+
         storage.allSubTasks.put(id, subTask);
-        if(storage.allEpics.containsKey(idEpic)) {
+        if (storage.allEpics.containsKey(idEpic)) {
             storage.allEpics.get(idEpic).subTasks.put(id, subTask);
         }
         checkStatusOfEpic(idEpic);
@@ -66,28 +59,26 @@ public class InMemoryTaskManager implements TaskManager {
     @Override
     public void createEpic(String name, String details, Integer id) {
         Map<Integer, SubTask> subTasks = new HashMap<>();
-        for(Integer i : storage.allSubTasks.keySet()) {
-            if(storage.allSubTasks.get(i).idEpic.equals(id)) {
+        for (Integer i : storage.allSubTasks.keySet()) {
+            if (storage.allSubTasks.get(i).idEpic.equals(id)) {
                 subTasks.put(i, storage.allSubTasks.get(i));
             }
         }
-        Epic epic = new Epic(subTasks);
-        epic.name = name;
-        epic.details = details;
-        epic.id = id;
-        storage.allEpics.put(id,epic);
+        Epic epic = new Epic(subTasks, name, details, null, id);
+
+        storage.allEpics.put(id, epic);
         checkStatusOfEpic(id);
     }
 
     @Override
     public void updateTask(Task task) {
-        storage.allTasks.put(task.getId(),task);
+        storage.allTasks.put(task.getId(), task);
     }
 
     @Override
     public void updateEpic(Epic epic) {
         storage.allEpics.put(epic.getId(), epic);
-        for(Integer i : storage.allSubTasks.keySet()) {
+        for (Integer i : storage.allSubTasks.keySet()) {
             storage.allSubTasks.put(i, epic.subTasks.get(i));
         }
         checkStatusOfEpic(epic.getId());
@@ -104,7 +95,7 @@ public class InMemoryTaskManager implements TaskManager {
     @Override
     public List<Task> getTasks() {
         List<Task> tasks = new ArrayList<>();
-        for(Integer i : storage.allTasks.keySet()) {
+        for (Integer i : storage.allTasks.keySet()) {
             tasks.add(storage.allTasks.get(i));
         }
         return tasks;
@@ -113,7 +104,7 @@ public class InMemoryTaskManager implements TaskManager {
     @Override
     public List<Epic> getEpics() {
         List<Epic> epics = new ArrayList<>();
-        for(Integer i : storage.allEpics.keySet()) {
+        for (Integer i : storage.allEpics.keySet()) {
             epics.add(storage.allEpics.get(i));
         }
         return epics;
@@ -122,7 +113,7 @@ public class InMemoryTaskManager implements TaskManager {
     @Override
     public List<SubTask> getSubTasks() {
         List<SubTask> subTasks = new ArrayList<>();
-        for(Integer i : storage.allSubTasks.keySet()) {
+        for (Integer i : storage.allSubTasks.keySet()) {
             subTasks.add(storage.allSubTasks.get(i));
         }
         return subTasks;
@@ -131,7 +122,7 @@ public class InMemoryTaskManager implements TaskManager {
     @Override
     public List<SubTask> getSubTasksInEpic(Integer idEpic) {
         List<SubTask> subTasks = new ArrayList<>();
-        for(SubTask subTask : storage.allEpics.get(idEpic).subTasks.values()) {
+        for (SubTask subTask : storage.allEpics.get(idEpic).subTasks.values()) {
             subTasks.add(subTask);
         }
         return subTasks;
@@ -149,10 +140,10 @@ public class InMemoryTaskManager implements TaskManager {
         storage.allEpics.remove(i);
         historyManager.remove(i);
         List<Integer> numbers = new ArrayList<>();
-        for(Integer j : epic.subTasks.keySet()) {
-                numbers.add(j);
+        for (Integer j : epic.subTasks.keySet()) {
+            numbers.add(j);
         }
-        for(Integer number : numbers) {
+        for (Integer number : numbers) {
             storage.allSubTasks.remove(number);
             historyManager.remove(number);
         }
@@ -185,36 +176,39 @@ public class InMemoryTaskManager implements TaskManager {
     @Override
     public void checkStatusOfEpic(Integer id) {
         int counter = 0;
-        if (storage.allEpics.containsKey(id)) {
-            storage.allEpics.get(id).status = Status.NEW;
-            for (SubTask subTask : storage.allEpics.get(id).subTasks.values()) {
-                if (subTask.status.equals(Status.IN_PROGRESS)) {
-                    storage.allEpics.get(id).status = Status.IN_PROGRESS;
-                } else if (subTask.status.equals(Status.DONE)) {
-                    counter++;
-                }
-                if (counter == storage.allEpics.get(id).subTasks.size()) {
-                    storage.allEpics.get(id).status = Status.DONE;
-                } else if (counter > 0 && counter < storage.allEpics.get(id).subTasks.size()) {
-                    storage.allEpics.get(id).status = Status.IN_PROGRESS;
-                }
+        Epic epic = storage.allEpics.get(id);
+        if (epic == null)
+            return;
+
+        epic.status = Status.NEW;
+        for (SubTask subTask : epic.subTasks.values()) {
+            if (subTask.status.equals(Status.IN_PROGRESS)) {
+                epic.status = Status.IN_PROGRESS;
+            } else if (subTask.status.equals(Status.DONE)) {
+                counter++;
+            }
+            if (counter == epic.subTasks.size()) {
+                epic.status = Status.DONE;
+            } else if (counter > 0 && counter < epic.subTasks.size()) {
+                epic.status = Status.IN_PROGRESS;
             }
         }
+
     }
 
     @Override
     public void updateStatusOfEpics() {
-        for(Epic epic : storage.allEpics.values()) {
-            for(SubTask subTask : epic.subTasks.values())
+        for (Epic epic : storage.allEpics.values()) {
+            for (SubTask subTask : epic.subTasks.values())
                 subTask.status = storage.allSubTasks.get(subTask.id).status;
         }
-        for(Epic epic : storage.allEpics.values()) {
+        for (Epic epic : storage.allEpics.values()) {
             int counter = 0;
             epic.status = Status.NEW;
-            for(SubTask subTask : epic.subTasks.values()) {
+            for (SubTask subTask : epic.subTasks.values()) {
                 if (subTask.status.equals(Status.IN_PROGRESS)) {
                     epic.status = Status.IN_PROGRESS;
-                } else if(subTask.status.equals(Status.DONE)) {
+                } else if (subTask.status.equals(Status.DONE)) {
                     counter++;
                 }
                 if (counter == epic.subTasks.size()) {

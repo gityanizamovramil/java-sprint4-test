@@ -1,12 +1,14 @@
 package rus.yandex.practicum.tasktracker.manager;
 
-public class Node<Task> {
+import rus.yandex.practicum.tasktracker.model.Task;
 
-    public Node<Task> next;
+public class Node {
+
+    public Node next;
     public Task current;
-    public Node<Task> prev;
+    public Node prev;
 
-    public Node(Node<Task> prev, Task current, Node<Task> next) {
+    public Node(Node prev, Task current, Node next) {
         this.current = current;
         this.next = next;
         this.prev = prev;
@@ -18,8 +20,6 @@ public class Node<Task> {
         this.prev = null;
     }
 
-    public Node() {
 
-    }
 
 }
