@@ -13,13 +13,11 @@ public class Task {
 
     }
 
-    @Override
-    public String toString() {
-        return "rus.yandex.practicum.tasktracker.model.Task{"+"name='"+name+ '\''+
-                ", details='"+ details +'\'' +
-                ", id='" + id + '\'' +
-                ", status='" + status + '\'' +
-                "}";
+    public Task(String name, String details, Status status, Integer id) {
+
+        this.details = details;
+        this.status = status;
+        this.id = id;
     }
 
     public Integer getId() {
@@ -46,5 +44,16 @@ public class Task {
         }
         hash = hash * 31;
         return  hash;
+    }
+
+
+    @Override
+    public String toString() {
+        return "Task{" +
+                "name='" + name + '\'' +
+                ", details='" + details + '\'' +
+                ", status=" + status +
+                ", id=" + id +
+                '}';
     }
 }
